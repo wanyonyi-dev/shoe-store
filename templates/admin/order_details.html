@@ -1,0 +1,91 @@
+<div class="order-details">
+    <h3>Order #{{ order._id }}</h3>
+    
+    <div class="order-info-grid">
+        <div class="order-info-card">
+            <h4>Customer Information</h4>
+            <p><strong>Name:</strong> {{ order.customer_name }}</p>
+            <p><strong>Email:</strong> {{ order.customer_email }}</p>
+            <p><strong>Phone:</strong> {{ order.customer_phone }}</p>
+        </div>
+        
+        <div class="order-info-card">
+            <h4>Shipping Address</h4>
+            <p>{{ order.shipping_address.street }}</p>
+            <p>{{ order.shipping_address.city }}, {{ order.shipping_address.state }} {{ order.shipping_address.zip }}</p>
+            <p>{{ order.shipping_address.country }}</p>
+        </div>
+        
+        <div class="order-info-card">
+            <h4>Order Summary</h4>
+            <p><strong>Order Date:</strong> {{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+            <p><strong>Status:</strong> {{ order.status }}</p>
+            <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+        </div>
+    </div>
+
+    <div class="order-items">
+        <h4>Order Items</h4>
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>Price</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items %}
+                <tr>
+                    <td>
+                        <div class="product-info">
+                            <img src="{{ item.image_url }}" alt="{{ item.name }}" class="product-thumbnail">
+                            <div>
+                                <strong>{{ item.name }}</strong>
+                                <small>SKU: {{ item.sku }}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ item.quantity }}</td>
+                    <td>${{ "%.2f"|format(item.price) }}</td>
+                    <td>${{ "%.2f"|format(item.price * item.quantity) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="3" class="text-right"><strong>Subtotal</strong></td>
+                    <td>${{ "%.2f"|format(order.subtotal) }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-right"><strong>Shipping</strong></td>
+                    <td>${{ "%.2f"|format(order.shipping) }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-right"><strong>Tax</strong></td>
+                    <td>${{ "%.2f"|format(order.tax) }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3" class="text-right"><strong>Total</strong></td>
+                    <td>${{ "%.2f"|format(order.total) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="order-timeline">
+        <h4>Order Timeline</h4>
+        <div class="timeline">
+            {% for event in order.timeline %}
+            <div class="timeline-item">
+                <div class="timeline-date">{{ event.date.strftime('%Y-%m-%d %H:%M') }}</div>
+                <div class="timeline-content">
+                    <strong>{{ event.status }}</strong>
+                    <p>{{ event.description }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div> 

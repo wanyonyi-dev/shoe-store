@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shoe Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        /* Add any critical CSS here */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .featured-categories {
+            padding: 4rem 2rem;
+            background-color: #f8f9fa;
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 3rem;
+            font-size: 2.5rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .category-card {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .category-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .category-image {
+            position: relative;
+            height: 400px;
+            overflow: hidden;
+        }
+
+        .category-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .category-card:hover .category-image img {
+            transform: scale(1.1);
+        }
+
+        .category-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .category-card:hover .category-overlay {
+            opacity: 1;
+        }
+
+        .shop-now {
+            padding: 12px 30px;
+            background-color: white;
+            color: #333;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+        }
+
+        .shop-now:hover {
+            background-color: #333;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        .category-card h3 {
+            text-align: center;
+            padding: 1.5rem;
+            margin: 0;
+            font-size: 1.5rem;
+            color: #333;
+            background-color: white;
+        }
+
+        @media (max-width: 768px) {
+            .category-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .category-image {
+                height: 300px;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+
+        .products-section {
+            padding: 4rem 2rem;
+            background-color: #fff;
+        }
+
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-badge {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 2;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .badge {
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .low-stock {
+            background-color: #ff4444;
+            color: white;
+        }
+
+        .sale {
+            background-color: #00C851;
+            color: white;
+        }
+
+        .product-image {
+            position: relative;
+            height: 280px;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .product-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .product-card:hover .product-overlay {
+            opacity: 1;
+        }
+
+        .quick-view-btn, .wishlist-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 25px;
+            background: white;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quick-view-btn:hover, .wishlist-btn:hover {
+            background: #333;
+            color: white;
+        }
+
+        .product-info {
+            padding: 1.5rem;
+        }
+
+        .product-name {
+            font-size: 1.2rem;
+            margin: 0 0 0.5rem 0;
+            color: #333;
+        }
+
+        .product-meta {
+            display: flex;
+            justify-content: space-between;
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-price {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .current-price {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .original-price {
+            color: #999;
+            text-decoration: line-through;
+            font-size: 1rem;
+        }
+
+        .product-colors {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #ddd;
+        }
+
+        .add-to-cart-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            background: #007bff;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .add-to-cart-btn:hover {
+            background: #0056b3;
+        }
+
+        @media (max-width: 768px) {
+            .product-grid {
+                grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+                gap: 1.5rem;
+            }
+
+            .product-image {
+                height: 240px;
+            }
+        }
+
+        .notification {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
+            z-index: 1000;
+            animation: fadeIn 0.5s, fadeOut 0.5s 2.5s;
+        }
+
+        .cart-count {
+            background-color: #ff4444;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 6px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        @keyframes fadeIn {
+            from {opacity: 0;}
+            to {opacity: 1;}
+        }
+
+        @keyframes fadeOut {
+            from {opacity: 1;}
+            to {opacity: 0;}
+        }
+
+        /* Add these new styles */
+        .alert {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .nav-links a i {
+            margin-right: 5px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Overlay -->
+    <div class="loading">
+        <div class="loader"></div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero-slider">
+        <div class="slide active" style="background-image: url('https://images.unsplash.com/photo-1542291026-7eec264c27ff')">
+            <div class="slide-content">
+                <h1>Premium Footwear</h1>
+                <p>Discover our latest collection</p>
+            </div>
+        </div>
+        <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1608231387042-66d1773070a5')">
+            <div class="slide-content">
+                <h1>Sport Collection</h1>
+                <p>Performance meets style</p>
+            </div>
+        </div>
+        <div class="slide" style="background-image: url('https://images.unsplash.com/photo-1549298916-b41d501d3772')">
+            <div class="slide-content">
+                <h1>Casual Comfort</h1>
+                <p>Everyday elegance for everyone</p>
+            </div>
+        </div>
+    </section>
+
+    <nav class="navbar">
+        <div class="logo">
+            <a href="{{ url_for('home') }}">Shoe Store</a>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}">Home</a>
+            {% if 'user' in session %}
+                <a href="{{ url_for('profile') }}"><i class="fas fa-user"></i> Profile</a>
+                {% if is_admin %}
+                    <a href="{{ url_for('admin_dashboard') }}"><i class="fas fa-cog"></i> Admin Panel</a>
+                {% endif %}
+                <a href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            {% else %}
+                <a href="{{ url_for('login') }}"><i class="fas fa-sign-in-alt"></i> Login</a>
+                <a href="{{ url_for('register') }}"><i class="fas fa-user-plus"></i> Register</a>
+            {% endif %}
+            <a href="{{ url_for('view_cart') }}">Cart <i class="fas fa-shopping-cart"></i> <span class="cart-count">0</span></a>
+        </div>
+    </nav>
+
+    <!-- Add this after the navbar for flash messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="search-section">
+        <form action="{{ url_for('search') }}" method="get" class="search-form">
+            <div class="filter-group">
+                <label>Gender</label>
+                <select name="gender">
+                    <option value="">All</option>
+                    <option value="Men" {% if current_filters and current_filters.gender == 'Men' %}selected{% endif %}>Men</option>
+                    <option value="Women" {% if current_filters and current_filters.gender == 'Women' %}selected{% endif %}>Women</option>
+                    <option value="Kids" {% if current_filters and current_filters.gender == 'Kids' %}selected{% endif %}>Kids</option>
+                    <option value="Unisex" {% if current_filters and current_filters.gender == 'Unisex' %}selected{% endif %}>Unisex</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Category</label>
+                <select name="category">
+                    <option value="">All</option>
+                    <option value="Running" {% if current_filters and current_filters.category == 'Running' %}selected{% endif %}>Running</option>
+                    <option value="Casual" {% if current_filters and current_filters.category == 'Casual' %}selected{% endif %}>Casual</option>
+                    <option value="Sports" {% if current_filters and current_filters.category == 'Sports' %}selected{% endif %}>Sports</option>
+                    <option value="Formal" {% if current_filters and current_filters.category == 'Formal' %}selected{% endif %}>Formal</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Color</label>
+                <input type="text" name="color" placeholder="Enter color" 
+                       value="{{ current_filters.color if current_filters else '' }}">
+            </div>
+
+            <div class="filter-group">
+                <label>Origin</label>
+                <input type="text" name="origin" placeholder="Enter country" 
+                       value="{{ current_filters.origin if current_filters else '' }}">
+            </div>
+
+            <div class="filter-group">
+                <label>Price Range</label>
+                <div class="price-inputs">
+                    <input type="number" name="min_price" placeholder="Min" step="0.01"
+                           value="{{ current_filters.min_price if current_filters and current_filters.min_price else '' }}">
+                    <span>to</span>
+                    <input type="number" name="max_price" placeholder="Max" step="0.01"
+                           value="{{ current_filters.max_price if current_filters and current_filters.max_price else '' }}">
+                </div>
+            </div>
+
+            <div class="filter-buttons">
+                <button type="submit" class="search-btn">Search</button>
+                <a href="{{ url_for('home') }}" class="reset-btn">Reset</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Featured Categories -->
+    <section class="featured-categories">
+        <h2 class="section-title">Shop by Category</h2>
+        <div class="category-grid">
+            <div class="category-card">
+                <div class="category-image">
+                    <img src="https://images.unsplash.com/photo-1527010154944-f2241763d806" alt="Men's Shoes">
+                    <div class="category-overlay">
+                        <a href="{{ url_for('search', gender='Men') }}" class="shop-now">Shop Now</a>
+                    </div>
+                </div>
+                <h3>Men</h3>
+            </div>
+            <div class="category-card">
+                <div class="category-image">
+                    <img src="https://images.unsplash.com/photo-1543163521-1bf539c55dd2" alt="Women's Shoes">
+                    <div class="category-overlay">
+                        <a href="{{ url_for('search', gender='Women') }}" class="shop-now">Shop Now</a>
+                    </div>
+                </div>
+                <h3>Women</h3>
+            </div>
+            <div class="category-card">
+                <div class="category-image">
+                    <img src="https://images.unsplash.com/photo-1514989940723-e8e51635b782" alt="Kids' Shoes">
+                    <div class="category-overlay">
+                        <a href="{{ url_for('search', gender='Kids') }}" class="shop-now">Shop Now</a>
+                    </div>
+                </div>
+                <h3>Kids</h3>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modified Product Grid -->
+    <section class="products-section">
+        <h2 class="section-title">Our Collection</h2>
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product-card" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                <div class="product-image">
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                    <div class="product-overlay">
+                        <button class="quick-view-btn" onclick="quickView('{{ product._id }}')">
+                            <i class="fas fa-eye"></i> Quick View
+                        </button>
+                        <button class="wishlist-btn" onclick="addToWishlist('{{ product._id }}')">
+                            <i class="far fa-heart"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <h3 class="product-name">{{ product.name }}</h3>
+                    <div class="product-meta">
+                        <span class="product-category">{{ product.category }}</span>
+                    </div>
+                    <div class="product-price">
+                        <span class="current-price">${{ "%.2f"|format(product.price) }}</span>
+                    </div>
+                    <button class="add-to-cart-btn" onclick="addToCart('{{ product._id }}')">
+                        <i class="fas fa-shopping-cart"></i> Add to Cart
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- Quick View Modal -->
+    <div id="quickViewModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="quickViewContent"></div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Initialize AOS
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+
+        // Hero Slider
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+
+        function showSlide(index) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            slides[index].classList.add('active');
+        }
+
+        function nextSlide() {
+            currentSlide = (currentSlide + 1) % slides.length;
+            showSlide(currentSlide);
+        }
+
+        // Auto switch slides every 10 seconds
+        setInterval(nextSlide, 10000);
+
+        // Quick View functionality
+        function quickView(productId) {
+            const modal = document.getElementById('quickViewModal');
+            modal.style.display = 'block';
+            // Fetch and display product details
+        }
+
+        // Close modal
+        document.querySelector('.close').onclick = function() {
+            document.getElementById('quickViewModal').style.display = 'none';
+        }
+
+        function addToWishlist(productId) {
+            // Add wishlist functionality
+            alert('Added to wishlist!');
+        }
+
+        // Add this at the start of your script section
+        let cartCount = 0;
+
+        function showNotification(message) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            // Hide notification after 3 seconds
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+
+        function updateCartCount() {
+            const cartCountElement = document.querySelector('.cart-count');
+            cartCountElement.textContent = cartCount;
+        }
+
+        function addToCart(productId) {
+            fetch('/api/cart/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    product_id: productId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                cartCount++;
+                updateCartCount();
+                showNotification('Product added to cart!');
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('Error adding product to cart');
+            });
+        }
+
+        // Add this to initialize cart count on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // You can fetch the initial cart count from the server here
+            fetch('/api/cart/count')
+            .then(response => response.json())
+            .then(data => {
+                cartCount = data.count;
+                updateCartCount();
+            })
+            .catch(error => console.error('Error:', error));
+        });
+    </script>
+</body>
+</html> 

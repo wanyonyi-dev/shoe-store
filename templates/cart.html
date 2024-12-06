@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Shopping Cart</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">
+            <a href="{{ url_for('home') }}">Shoe Store</a>
+        </div>
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('view_cart') }}" class="cart-link">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="cart-count">{{ cart_items|length }}</span>
+            </a>
+        </div>
+    </nav>
+
+    <div class="cart-page-container">
+        <h1 class="cart-title">Shopping Cart</h1>
+        
+        {% if cart_items %}
+            <div class="cart-grid">
+                <div class="cart-items-container">
+                    {% for item in cart_items %}
+                        <div class="cart-item-card" data-product-id="{{ item._id }}">
+                            <div class="item-image">
+                                <img src="{{ item.image_url }}" alt="{{ item.name }}">
+                            </div>
+                            <div class="item-details">
+                                <h3 class="item-name">{{ item.name }}</h3>
+                                <p class="item-category">{{ item.category }}</p>
+                                <div class="item-price">${{ "%.2f"|format(item.price) }}</div>
+                                <div class="quantity-controls">
+                                    <button onclick="updateQuantity('{{ item._id }}', 'decrease')" class="qty-btn">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <span class="quantity">{{ item.quantity }}</span>
+                                    <button onclick="updateQuantity('{{ item._id }}', 'increase')" class="qty-btn">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="item-actions">
+                                <div class="item-total">${{ "%.2f"|format(item.total) }}</div>
+                                <button class="remove-btn" onclick="removeItem('{{ item._id }}')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="order-summary">
+                    <h2>Order Summary</h2>
+                    <div class="summary-details">
+                        <div class="summary-row">
+                            <span>Subtotal</span>
+                            <span id="subtotal">${{ "%.2f"|format(subtotal) }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Shipping</span>
+                            <span id="shipping">${{ "%.2f"|format(shipping) }}</span>
+                        </div>
+                        <div class="summary-row">
+                            <span>Tax</span>
+                            <span id="tax">${{ "%.2f"|format(tax) }}</span>
+                        </div>
+                        <div class="summary-row total">
+                            <span>Total</span>
+                            <span id="total">${{ "%.2f"|format(total) }}</span>
+                        </div>
+                    </div>
+                    <button class="checkout-btn">
+                        <i class="fas fa-lock"></i> Secure Checkout
+                    </button>
+                    <div class="payment-methods">
+                        <i class="fab fa-cc-visa"></i>
+                        <i class="fab fa-cc-mastercard"></i>
+                        <i class="fab fa-cc-amex"></i>
+                        <i class="fab fa-cc-paypal"></i>
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <div class="empty-cart">
+                <i class="fas fa-shopping-cart empty-cart-icon"></i>
+                <h2>Your cart is empty</h2>
+                <p>Looks like you haven't added any items to your cart yet.</p>
+                <a href="{{ url_for('home') }}" class="continue-shopping-btn">
+                    <i class="fas fa-arrow-left"></i> Continue Shopping
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+    function showNotification(message, type = 'success') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+            <div class="notification-content">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+                <span>${message}</span>
+            </div>
+        `;
+        document.body.appendChild(notification);
+
+        // Remove notification after 3 seconds
+        setTimeout(() => {
+            notification.classList.add('fade-out');
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    function updateCartUI(data, productId) {
+        // Update cart count
+        document.querySelectorAll('.cart-count').forEach(el => {
+            el.textContent = data.cart_count;
+        });
+
+        // Update totals
+        document.getElementById('subtotal').textContent = data.subtotal;
+        document.getElementById('shipping').textContent = data.shipping;
+        document.getElementById('tax').textContent = data.tax;
+        document.getElementById('total').textContent = data.total;
+
+        // Update item quantity and total
+        const itemCard = document.querySelector(`[data-product-id="${productId}"]`);
+        if (itemCard) {
+            const quantityElement = itemCard.querySelector('.quantity');
+            const totalElement = itemCard.querySelector('.item-total');
+            if (data.item_quantity === 0) {
+                itemCard.classList.add('fade-out');
+                setTimeout(() => {
+                    itemCard.remove();
+                    if (data.cart_count === 0) {
+                        location.reload(); // Show empty cart template
+                    }
+                }, 300);
+            } else {
+                quantityElement.textContent = data.item_quantity;
+                totalElement.textContent = data.item_total;
+            }
+        }
+    }
+
+    function updateQuantity(productId, action) {
+        // Disable buttons during update
+        const itemCard = document.querySelector(`[data-product-id="${productId}"]`);
+        const buttons = itemCard.querySelectorAll('button');
+        buttons.forEach(btn => btn.disabled = true);
+
+        fetch('/api/cart/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                updateCartUI(data, productId);
+                if (action === 'decrease' && data.item_quantity === 0) {
+                    showNotification('Item removed from cart');
+                } else {
+                    showNotification('Cart updated successfully');
+                }
+            } else {
+                showNotification(data.message || 'Error updating cart', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error updating cart', 'error');
+        })
+        .finally(() => {
+            // Re-enable buttons
+            buttons.forEach(btn => btn.disabled = false);
+        });
+    }
+
+    function removeItem(productId) {
+        const itemCard = document.querySelector(`[data-product-id="${productId}"]`);
+        if (!itemCard) return;
+
+        // Add loading state
+        itemCard.classList.add('loading');
+
+        fetch('/api/cart/update', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                product_id: productId,
+                action: 'remove'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                itemCard.classList.add('fade-out');
+                setTimeout(() => {
+                    itemCard.remove();
+                    updateCartUI(data, productId);
+                    showNotification('Item removed from cart');
+                    if (data.cart_count === 0) {
+                        location.reload();
+                    }
+                }, 300);
+            } else {
+                showNotification(data.message || 'Error removing item', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error removing item', 'error');
+        })
+        .finally(() => {
+            itemCard.classList.remove('loading');
+        });
+    }
+    </script>
+</body>
+</html> 

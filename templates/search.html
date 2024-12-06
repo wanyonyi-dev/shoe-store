@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="search-page">
+    <div class="filters-sidebar">
+        <h3>Filters</h3>
+        <form id="filterForm" class="filter-form">
+            <div class="filter-section">
+                <label for="search">Search</label>
+                <input type="text" id="search" name="q" value="{{ query }}" placeholder="Search products...">
+            </div>
+
+            <div class="filter-section">
+                <label for="category">Category</label>
+                <select id="category" name="category">
+                    <option value="">All Categories</option>
+                    {% for category in categories %}
+                    <option value="{{ category }}" {% if category == selected_category %}selected{% endif %}>
+                        {{ category }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-section">
+                <label>Price Range</label>
+                <div class="price-inputs">
+                    <input type="number" name="min_price" value="{{ min_price }}" placeholder="Min">
+                    <span>to</span>
+                    <input type="number" name="max_price" value="{{ max_price }}" placeholder="Max">
+                </div>
+            </div>
+
+            <div class="filter-section">
+                <label for="sort">Sort By</label>
+                <select id="sort" name="sort">
+                    <option value="name_asc" {% if sort == 'name_asc' %}selected{% endif %}>Name (A-Z)</option>
+                    <option value="name_desc" {% if sort == 'name_desc' %}selected{% endif %}>Name (Z-A)</option>
+                    <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price (Low to High)</option>
+                    <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price (High to Low)</option>
+                </select>
+            </div>
+
+            <button type="submit" class="apply-filters-btn">Apply Filters</button>
+            <button type="button" class="clear-filters-btn" onclick="clearFilters()">Clear Filters</button>
+        </form>
+    </div>
+
+    <div class="search-results">
+        <div class="results-header">
+            <h2>Search Results</h2>
+            <span class="results-count">{{ products|length }} products found</span>
+        </div>
+
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                    <div class="product-overlay">
+                        <button onclick="addToWishlist('{{ product._id }}')" class="wishlist-btn">
+                            <i class="far fa-heart"></i>
+                        </button>
+                        <button onclick="quickView('{{ product._id }}')" class="quick-view-btn">
+                            <i class="far fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="product-info">
+                    <h3>{{ product.name }}</h3>
+                    <p class="product-category">{{ product.category }}</p>
+                    <p class="product-price">${{ "%.2f"|format(product.price) }}</p>
+                    <button onclick="addToCart('{{ product._id }}')" class="add-to-cart-btn">
+                        Add to Cart
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function clearFilters() {
+    document.getElementById('search').value = '';
+    document.getElementById('category').value = '';
+    document.querySelector('input[name="min_price"]').value = '';
+    document.querySelector('input[name="max_price"]').value = '';
+    document.getElementById('sort').value = 'name_asc';
+    document.getElementById('filterForm').submit();
+}
+
+// Add debouncing for search input
+let searchTimeout;
+document.getElementById('search').addEventListener('input', function(e) {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        document.getElementById('filterForm').submit();
+    }, 500);
+});
+
+// Auto-submit on filter changes
+document.querySelectorAll('select, input[type="number"]').forEach(element => {
+    element.addEventListener('change', () => {
+        document.getElementById('filterForm').submit();
+    });
+});
+</script>
+{% endblock %} 

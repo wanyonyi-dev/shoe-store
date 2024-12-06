@@ -1,0 +1,62 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="product-form-container">
+    <div class="page-header">
+        <h2>{{ 'Edit Product' if product else 'Add New Product' }}</h2>
+    </div>
+
+    <form method="POST" class="admin-form" enctype="multipart/form-data">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="name">Product Name</label>
+                <input type="text" id="name" name="name" value="{{ product.name if product else '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category</label>
+                <select id="category" name="category" required>
+                    <option value="">Select Category</option>
+                    <option value="Running" {% if product and product.category == 'Running' %}selected{% endif %}>Running</option>
+                    <option value="Casual" {% if product and product.category == 'Casual' %}selected{% endif %}>Casual</option>
+                    <option value="Sports" {% if product and product.category == 'Sports' %}selected{% endif %}>Sports</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="price">Price</label>
+                <input type="number" id="price" name="price" step="0.01" value="{{ product.price if product else '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label for="stock">Stock</label>
+                <input type="number" id="stock" name="stock" value="{{ product.stock if product else '0' }}" required>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="4" required>{{ product.description if product else '' }}</textarea>
+            </div>
+
+            <div class="form-group full-width">
+                <label for="image_url">Image URL</label>
+                <input type="url" id="image_url" name="image_url" value="{{ product.image_url if product else '' }}" required>
+            </div>
+
+            {% if product and product.image_url %}
+            <div class="form-group">
+                <label>Current Image</label>
+                <img src="{{ product.image_url }}" alt="{{ product.name }}" class="preview-image">
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                {{ 'Update Product' if product else 'Add Product' }}
+            </button>
+            <a href="{{ url_for('admin_products') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %} 

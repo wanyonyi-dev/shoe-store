@@ -1,0 +1,143 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="analytics-dashboard">
+    <div class="page-header">
+        <h2>Analytics Dashboard</h2>
+        <div class="date-range-picker">
+            <input type="date" id="startDate">
+            <span>to</span>
+            <input type="date" id="endDate">
+            <button onclick="updateAnalytics()" class="btn btn-primary">Update</button>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-header">
+                <h3>Revenue</h3>
+                <select class="time-range">
+                    <option value="daily">Daily</option>
+                    <option value="weekly">Weekly</option>
+                    <option value="monthly">Monthly</option>
+                </select>
+            </div>
+            <div class="stat-chart">
+                <canvas id="revenueChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <h3>Orders</h3>
+                <div class="stat-value">{{ total_orders }}</div>
+            </div>
+            <div class="stat-chart">
+                <canvas id="ordersChart"></canvas>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <h3>Top Products</h3>
+            </div>
+            <div class="top-products">
+                {% for product in top_products %}
+                <div class="product-stat">
+                    <img src="{{ product.image_url }}" alt="{{ product.name }}">
+                    <div class="product-stat-info">
+                        <span>{{ product.name }}</span>
+                        <small>{{ product.sales }} sales</small>
+                    </div>
+                    <div class="product-stat-revenue">${{ "%.2f"|format(product.revenue) }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-header">
+                <h3>Customer Analytics</h3>
+            </div>
+            <div class="customer-stats">
+                <div class="stat-row">
+                    <span>New Customers</span>
+                    <strong>{{ new_customers }}</strong>
+                </div>
+                <div class="stat-row">
+                    <span>Repeat Customers</span>
+                    <strong>{{ repeat_customers }}</strong>
+                </div>
+                <div class="stat-row">
+                    <span>Average Order Value</span>
+                    <strong>${{ "%.2f"|format(avg_order_value) }}</strong>
+                </div>
+            </div>
+            <div class="stat-chart">
+                <canvas id="customerChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="analytics-grid">
+        <div class="analytics-card">
+            <h3>Sales by Category</h3>
+            <div class="chart-container">
+                <canvas id="categorySalesChart"></canvas>
+            </div>
+        </div>
+
+        <div class="analytics-card">
+            <h3>Geographic Distribution</h3>
+            <div class="chart-container">
+                <canvas id="geoDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const revenueChart = new Chart(
+    document.getElementById('revenueChart'),
+    {
+        type: 'line',
+        data: {
+            labels: JSON.parse('{{ revenue_labels|tojson|safe }}'),
+            datasets: [{
+                label: 'Revenue',
+                data: JSON.parse('{{ revenue_data|tojson|safe }}'),
+                borderColor: '#4CAF50',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false
+        }
+    }
+);
+
+function updateAnalytics() {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    
+    fetch(`/admin/analytics/data?start=${startDate}&end=${endDate}`)
+        .then(response => response.json())
+        .then(data => {
+            updateCharts(data);
+        });
+}
+
+function updateCharts(data) {
+    // Update each chart with new data
+    revenueChart.data.labels = data.revenue_labels;
+    revenueChart.data.datasets[0].data = data.revenue_data;
+    revenueChart.update();
+    
+    // Update other charts similarly...
+}
+</script>
+{% endblock %} 

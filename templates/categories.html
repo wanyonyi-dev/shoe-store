@@ -1,0 +1,18 @@
+from flask import Flask, render_template
+
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    # Add your products data here
+    return render_template('home.html', products=[])
+
+@app.route('/cart')
+def cart():
+    # Add your cart logic here
+    return render_template('cart.html', cart_items=[], subtotal=0, shipping=0, total=0)
+
+@app.route('/categories')
+def categories():
+    # Add your categories logic here
+    return render_template('categories.html', products=[], sizes=[], colors=[]) 

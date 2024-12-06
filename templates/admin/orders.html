@@ -1,0 +1,170 @@
+{% extends "admin/base.html" %}
+
+{% block content %}
+<div class="orders-management">
+    <div class="page-header">
+        <h2>Order Management</h2>
+        <div class="header-actions">
+            <button class="btn btn-secondary" onclick="exportOrders()">
+                <i class="fas fa-download"></i> Export Orders
+            </button>
+        </div>
+    </div>
+
+    <div class="filter-bar">
+        <div class="search-box">
+            <input type="text" id="orderSearch" placeholder="Search orders...">
+        </div>
+        <div class="filter-options">
+            <select id="statusFilter">
+                <option value="">All Status</option>
+                <option value="pending">Pending</option>
+                <option value="processing">Processing</option>
+                <option value="shipped">Shipped</option>
+                <option value="delivered">Delivered</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+            <input type="date" id="dateFilter" placeholder="Filter by date">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="admin-table orders-table">
+            <thead>
+                <tr>
+                    <th>Order ID</th>
+                    <th>Customer</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>#{{ order._id }}</td>
+                    <td>
+                        <div class="customer-info">
+                            <span>{{ order.customer_name }}</span>
+                            <small>{{ order.customer_email }}</small>
+                        </div>
+                    </td>
+                    <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ order.items|length }} items</td>
+                    <td>${{ "%.2f"|format(order.total) }}</td>
+                    <td>
+                        <select class="status-select" onchange="updateOrderStatus('{{ order._id }}', this.value)">
+                            <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                            <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                            <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                            <option value="delivered" {% if order.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                            <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                        </select>
+                    </td>
+                    <td class="actions">
+                        <button onclick="viewOrderDetails('{{ order._id }}')" class="btn btn-icon">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button onclick="printOrder('{{ order._id }}')" class="btn btn-icon">
+                            <i class="fas fa-print"></i>
+                        </button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Order Details Modal -->
+<div id="orderModal" class="modal">
+    <div class="modal-content modal-lg">
+        <span class="close">&times;</span>
+        <div id="orderDetails"></div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function viewOrderDetails(orderId) {
+    fetch(`/admin/orders/${orderId}/details`)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('orderDetails').innerHTML = html;
+            document.getElementById('orderModal').style.display = 'block';
+        });
+}
+
+function updateOrderStatus(orderId, status) {
+    fetch('/admin/orders/update-status', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            order_id: orderId,
+            status: status
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification('Order status updated successfully', 'success');
+        } else {
+            showNotification('Error updating order status', 'error');
+        }
+    });
+}
+
+function exportOrders() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const dateFilter = document.getElementById('dateFilter').value;
+    
+    window.location.href = `/admin/orders/export?status=${statusFilter}&date=${dateFilter}`;
+}
+
+function printOrder(orderId) {
+    window.open(`/admin/orders/${orderId}/print`, '_blank');
+}
+
+// Search and Filter Functionality
+document.getElementById('orderSearch').addEventListener('input', filterOrders);
+document.getElementById('statusFilter').addEventListener('change', filterOrders);
+document.getElementById('dateFilter').addEventListener('change', filterOrders);
+
+function filterOrders() {
+    const searchTerm = document.getElementById('orderSearch').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const date = document.getElementById('dateFilter').value;
+    
+    const rows = document.querySelectorAll('.orders-table tbody tr');
+    
+    rows.forEach(row => {
+        const orderId = row.querySelector('td:nth-child(1)').textContent;
+        const customer = row.querySelector('.customer-info').textContent.toLowerCase();
+        const orderDate = row.querySelector('td:nth-child(3)').textContent;
+        const orderStatus = row.querySelector('.status-select').value;
+        
+        let showRow = true;
+        
+        if (searchTerm && !orderId.includes(searchTerm) && !customer.includes(searchTerm)) {
+            showRow = false;
+        }
+        
+        if (status && orderStatus !== status) {
+            showRow = false;
+        }
+        
+        if (date && !orderDate.includes(date)) {
+            showRow = false;
+        }
+        
+        row.style.display = showRow ? '' : 'none';
+    });
+}
+</script>
+{% endblock %} 
